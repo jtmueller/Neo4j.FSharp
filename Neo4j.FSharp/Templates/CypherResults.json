@@ -1,0 +1,29 @@
+{
+  "columns": [
+    "person",
+    "movie"
+  ],
+  "data": [
+    [
+      {
+        "extensions": {
+        },
+        "paged_traverse": "http://localhost:7474/db/data/node/350/paged/traverse/{returnType}{?pageSize,leaseTime}",
+        "labels": "http://localhost:7474/db/data/node/350/labels",
+        "outgoing_relationships": "http://localhost:7474/db/data/node/350/relationships/out",
+        "traverse": "http://localhost:7474/db/data/node/350/traverse/{returnType}",
+        "all_typed_relationships": "http://localhost:7474/db/data/node/350/relationships/all/{-list|\u0026|types}",
+        "property": "http://localhost:7474/db/data/node/350/properties/{key}",
+        "all_relationships": "http://localhost:7474/db/data/node/350/relationships/all",
+        "self": "http://localhost:7474/db/data/node/350",
+        "properties": "http://localhost:7474/db/data/node/350/properties",
+        "outgoing_typed_relationships": "http://localhost:7474/db/data/node/350/relationships/out/{-list|\u0026|types}",
+        "incoming_relationships": "http://localhost:7474/db/data/node/350/relationships/in",
+        "incoming_typed_relationships": "http://localhost:7474/db/data/node/350/relationships/in/{-list|\u0026|types}",
+        "create_relationship": "http://localhost:7474/db/data/node/350/relationships",
+        "data": {
+        }
+      }    
+    ]
+  ]
+}

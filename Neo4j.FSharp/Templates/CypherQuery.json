@@ -1,0 +1,5 @@
+﻿{
+  "query" : "MATCH (x {name: {startName}})-[r]-(friend) WHERE friend.name = {name} RETURN TYPE(r)",
+  "params" : {
+  }
+}
