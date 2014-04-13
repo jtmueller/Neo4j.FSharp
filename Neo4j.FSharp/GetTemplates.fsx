@@ -83,6 +83,6 @@ let cypherQuery =
 |> Async.RunSynchronously
 
 // If we leave the example params object empty because it should be dynamic, there's no way of setting the params.
-// Have to use JsonValue directly for types that need dynamic properties like the params object.
+// Have to use JsonValue directly to create types that need dynamic properties like the params object.
 //type CypherQuery = JsonProvider<"Templates/CypherQuery.json">
 //let foo = CypherQuery.Root("MATCH test", { JsonValue = JsonValue.Record([| "name", JsonValue.String("foo") |]) })
