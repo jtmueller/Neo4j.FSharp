@@ -12,24 +12,24 @@ type Room =
       Desc : string }
 
 cypher {
-    raw "CREATE (n3:Person { Name: 'Andres', Age: 27, Sex: 'M' })"
+    raw "CREATE (p1:Person { Name: 'Andres', Age: 27, Sex: 'M' })"
     createEmptyNode "n1" "Foo"
-    createNode "n2" "Person" [ "Name", box "Lisa"
+    createNode "p2" "Person" [ "Name", box "Lisa"
                                "Age", box 32
                                "Sex", box "F" ]
-    create "n4" { Name = "Joel"
-                  Age = 38
+    create "p3" { Name = "Random J. Person"
+                  Age = 26
                   Sex = 'M' }
-    create "n5" { Name = "Mark"
+    create "p4" { Name = "Mark"
                   Age = 41
                   Sex = 'M' }
-    create "n6" { Name = "Gary"
+    create "p5" { Name = "Gary"
                   Age = 57
                   Sex = 'M' }
-    create "n7" { Name = "Malika"
+    create "p6" { Name = "Malika"
                   Age = 14
                   Sex = 'F' }
-    create "r1" { Name = "Outside Farmhouse"
+    create "p7" { Name = "Outside Farmhouse"
                   Desc = "You are outside a small white farmhouse. There is a mailbox here." }
 }
 |> CypherBuilder.build
