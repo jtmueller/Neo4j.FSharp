@@ -7,6 +7,9 @@ open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Quotations
 open Swensen.Unquote
 
+// 100,000 instances of the same three-property class, Release build:
+// Real: 00:00:03.182, CPU: 00:00:03.187, GC gen0: 121, gen1: 1, gen2: 0
+
 type PropertyExtractor<'a> private () =
 
     static let buildGetProperties instanceVar (props : PropertyInfo[]) =
