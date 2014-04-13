@@ -31,18 +31,18 @@ module private CypherUtils =
         match value with
         | :? int | :? int64 | :? int16 | :? sbyte
         | :? uint32 | :? uint64 | :? uint16 | :? byte
-        | :? float | :? float32 | :? System.Numerics.BigInteger ->
+        | :? float | :? float32 ->
             value.ToString()
+        | :? System.Numerics.BigInteger ->
+            "\"" + value.ToString() + "\""  
         | :? string as s -> "\"" + escapeString s + "\""
         | :? char as c   -> "\"" + escapeChar c + "\""
         | :? bool -> value.ToString().ToLower()
         | :? DateTime as dt ->
-            DateTimeOffset(dt).ToString("o")
+            "\"" + DateTimeOffset(dt).ToString("o") + "\""
         | :? DateTimeOffset as dto ->
-            dto.ToString("o")
-        // TODO: Does Cypher support properties that contain sub-objects? If so the
-        // default case her will need to call PropertyExtractor.getProperties and serialize those. 
-        | _ -> value.ToString()
+            "\"" + dto.ToString("o") + "\""
+        | _ -> "\"" + escapeString (value.ToString()) + "\""
 
     let writeProps (b:StringBuilder) (props: array<string * obj>) =
         if props.Length = 0 then () else
@@ -55,6 +55,10 @@ module private CypherUtils =
 module Cypher =
     open CypherUtils
 
+    // TODO: properties set on creation should be done through params and not directly, to avoid injection attacks
+    // and to allow the Cypher query optimizer to do its thing. To that end...
+    // This type needs to carry around both the build function and an IDictionary<string * seq<string * obj>> to
+    // hold named sets of parameters.
     type CypherExpr =
         | Cy of buildFunction:(StringBuilder -> unit)
 
@@ -84,8 +88,6 @@ module Cypher =
             andWhere <@ fun (friend:User) -> not friend.Banned @>
             return <@ fun (user, friend) -> user.As<User>(), friend.Count() @> // in this case user/friend are a predefined interface type
         }
-
-        TODO: Also should consider using parameters to avoid Cypher-injection attacks.
     *)
     type CypherBuilderM internal () =
         let (!) = function Cy f -> f

@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Neo4j.FSharp.Tests", "Neo4j.FSharp.Tests\Neo4j.FSharp.Tests.fsproj", "{92E1DD07-A044-4A62-9C7A-AACCEA4CF9CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{434F43E3-AFBE-4911-AC60-E7A64546E963}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{434F43E3-AFBE-4911-AC60-E7A64546E963}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{434F43E3-AFBE-4911-AC60-E7A64546E963}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92E1DD07-A044-4A62-9C7A-AACCEA4CF9CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92E1DD07-A044-4A62-9C7A-AACCEA4CF9CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92E1DD07-A044-4A62-9C7A-AACCEA4CF9CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92E1DD07-A044-4A62-9C7A-AACCEA4CF9CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
