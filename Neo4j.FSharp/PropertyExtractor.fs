@@ -28,8 +28,10 @@ type PropertyExtractor<'a> private () =
 
         let createOutput =
             if t = typeof<(string * obj)[]> then
+                // The input is already in the right form, so we just pass it through.
                 Expr.NewTuple [ name; Expr.Var(instanceVar) ]
             elif typeof<seq<string * obj>>.IsAssignableFrom t then
+                // The input is the right sort of sequence, but we need to convert it to an array.
                 let sequence = Expr.Coerce(Expr.Var(instanceVar), typeof<seq<string * obj>>)
                 let toArray = <@ Array.ofSeq (%%sequence : seq<string * obj>) @>
                 Expr.NewTuple [ name; toArray ]
@@ -41,11 +43,11 @@ type PropertyExtractor<'a> private () =
             elif FSharpType.IsTuple t then
                 raise <| 
                     NotImplementedException
-                       ("Tuples are not currently supported. Neo4j property lists must have both names and values.")
+                       ("Tuples are not supported. Neo4j property lists must have both names and values.")
             elif FSharpType.IsUnion t then
                 raise <| 
                     NotImplementedException
-                       ("Discriminated Unions are not currently supported. Neo4j property lists must have both names and values.")
+                       ("Discriminated Unions are not supported. Neo4j property lists must have both names and values.")
             else
                 let getProps = 
                     t.GetProperties(BindingFlags.Public ||| BindingFlags.Instance) 

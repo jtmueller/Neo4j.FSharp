@@ -28,7 +28,7 @@ cypher {
     create "r1" { Name = "Outside Farmhouse"
                   Desc = "You are outside a small white farmhouse. There is a mailbox here." }
 
-    relate (R("p2" --> "p3", { Since = 1982 }))
+    relate (R("p2" --> "p3", { Friend.Since = 1982 }))
     relate (R("p3" --> "r1", StandingIn()))
 }
 |> CypherBuilder.build
