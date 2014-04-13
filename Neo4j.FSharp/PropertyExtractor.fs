@@ -14,11 +14,11 @@ type PropertyExtractor<'a> private () =
             props
             |> Seq.filter (fun p -> p.GetIndexParameters().Length = 0) // exclude indexed properties
             |> Seq.map (fun p ->
-                   let name = Expr.Value p.Name
-                   let value =
-                       let propGet = Expr.PropertyGet(Expr.Var instanceVar, p)
-                       Expr.Coerce(propGet, typeof<obj>)
-                   Expr.NewTuple [ name; value ])
+                let name = Expr.Value p.Name
+                let value =
+                    let propGet = Expr.PropertyGet(Expr.Var instanceVar, p)
+                    Expr.Coerce(propGet, typeof<obj>)
+                Expr.NewTuple [ name; value ])
             |> List.ofSeq
         Expr.NewArray(typeof<string * obj>, propVals)
 
@@ -27,7 +27,13 @@ type PropertyExtractor<'a> private () =
         let instanceVar = Var.Global("x", t)
 
         let createOutput =
-            if FSharpType.IsRecord t then
+            if t = typeof<(string * obj)[]> then
+                Expr.NewTuple [ name; Expr.Var(instanceVar) ]
+            elif typeof<seq<string * obj>>.IsAssignableFrom t then
+                let sequence = Expr.Coerce(Expr.Var(instanceVar), typeof<seq<string * obj>>)
+                let toArray = <@ Array.ofSeq (%%sequence : seq<string * obj>) @>
+                Expr.NewTuple [ name; toArray ]
+            elif FSharpType.IsRecord t then
                 let getProps = 
                     FSharpType.GetRecordFields(t, BindingFlags.Public ||| BindingFlags.Instance) 
                     |> buildGetProperties instanceVar

@@ -17,26 +17,26 @@ any .NET type (including F# Records) to Cypher syntax.
         { Name : string
           Desc : string }
 
+    // Marker type for relationship that has no properties
+    type StandingIn() = class end
+
+    type Friend =
+        { Since : int }
+
     cypher {
         raw "CREATE (p1:Person { Name: 'Andres', Age: 27, Sex: 'M' })"
-        createEmptyNode "n1" "Foo"
-        createNode "p2" "Person" [ "Name", box "Lisa"
+        createEmpty "n1" "Foo"
+        createType "p2" "Person" [ "Name", box "Lisa"
                                    "Age", box 32
                                    "Sex", box "F" ]
         create "p3" { Name = "Random J. Person"
                       Age = 26
                       Sex = 'M' }
-        create "p4" { Name = "Mark"
-                      Age = 41
-                      Sex = 'M' }
-        create "p5" { Name = "Gary"
-                      Age = 57
-                      Sex = 'M' }
-        create "p6" { Name = "Malika"
-                      Age = 14
-                      Sex = 'F' }
-        create "p7" { Name = "Outside Farmhouse"
+        create "r1" { Name = "Outside Farmhouse"
                       Desc = "You are outside a small white farmhouse. There is a mailbox here." }
+
+        relate (R("p2" --> "p3", { Since = 1982 }))
+        relate (R("p3" --> "r1", StandingIn()))
     }
     |> CypherBuilder.build
     |> printfn "%s"
