@@ -40,6 +40,8 @@ module private CypherUtils =
             DateTimeOffset(dt).ToString("o")
         | :? DateTimeOffset as dto ->
             dto.ToString("o")
+        // TODO: Does Cypher support properties that contain sub-objects? If so the
+        // default case her will need to call PropertyExtractor.getProperties and serialize those. 
         | _ -> value.ToString()
 
     let writeProps (b:StringBuilder) (props: seq<string * obj>) =
@@ -55,8 +57,11 @@ module Cypher =
     type CypherExpr =
         | Cy of (StringBuilder -> unit) 
 
-    type CypherBuilderM() =
+    type CypherBuilderM internal () =
         let (!) = function Cy f -> f
+
+        // TODO: most of the standard computation-expresson methods here
+        // probably won't be needed and should be removed if that proves to be the case.
 
         member __.Yield(txt : string) = Cy(fun b -> b.Append txt |> ignore)
         member __.Yield(c : char) = Cy(fun b -> b.Append c |> ignore)
@@ -99,6 +104,7 @@ module Cypher =
                 bprintf b ")\n"
             )
 
+        /// Creates a node based on the type name and public non-indexed properties of the given entity.
         [<CustomOperation("create", MaintainsVariableSpace=true)>]
         member __.Create(cb, name, entity:'a) =
             let nodeType, props = PropertyExtractor.getProperties entity
@@ -109,6 +115,7 @@ module Cypher =
     let cypher = CypherBuilderM()
 
     module CypherBuilder =
+        /// Compiles a CypherExpr from a "cypher" computation expression into a string.
         let build (Cy f) =
             let b = StringBuilder()
             f b

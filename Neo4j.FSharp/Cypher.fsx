@@ -1,4 +1,4 @@
-﻿#r @"bin\Release\Neo4j.FSharp.dll"
+﻿#r @"bin\Debug\Neo4j.FSharp.dll"
 
 open Neo4j.FSharp.Cypher
 
