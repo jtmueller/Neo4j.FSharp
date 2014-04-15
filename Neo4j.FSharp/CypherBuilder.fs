@@ -31,18 +31,23 @@ module private CypherUtils =
         match value with
         | :? int | :? int64 | :? int16 | :? sbyte
         | :? uint32 | :? uint64 | :? uint16 | :? byte
-        | :? float | :? float32 ->
+        | :? float | :? float32 | :? decimal ->
             value.ToString()
         | :? System.Numerics.BigInteger ->
-            "\"" + value.ToString() + "\""  
+            "\"" + value.ToString() + "\"" // quoting this because I don't know if Neo4j can handle arbitrarily large integers
         | :? string as s -> "\"" + escapeString s + "\""
         | :? char as c   -> "\"" + escapeChar c + "\""
         | :? bool -> value.ToString().ToLower()
         | :? DateTime as dt ->
-            "\"" + DateTimeOffset(dt).ToString("o") + "\""
+            "\"" + escapeString (DateTimeOffset(dt).ToString("o")) + "\""
         | :? DateTimeOffset as dto ->
-            "\"" + dto.ToString("o") + "\""
-        | _ -> "\"" + escapeString (value.ToString()) + "\""
+            "\"" + escapeString (dto.ToString("o")) + "\""
+        | :? (byte[]) as bytes ->
+            "\"" + escapeString (Convert.ToBase64String(bytes)) + "\""
+        | :? Guid as guid ->
+            "\"" + escapeString (guid.ToString()) + "\""
+        | _ -> 
+            "\"" + escapeString (value.ToString()) + "\""
 
     let writeProps (b:StringBuilder) (props: array<string * obj>) =
         if props.Length = 0 then () else
@@ -62,17 +67,42 @@ module Cypher =
     type CypherExpr =
         | Cy of buildFunction:(StringBuilder -> unit)
 
+    /// Is this a left-arrow relationship or a right-arrow relationship?
     type RelationKind =
-        | Left of string * string
-        | Right of string * string
+        | Left of leftName:string * rightName:string
+        | Right of leftName:string * rightName:string
 
+    /// A relationship.
     type Relationship<'a> =
-        /// The 'props' parameter must be supplied even if it is an instance of an empty class of the form "type Foo() = class end".
-        /// This object is used to determine both the relation type name and the properties.
-        | R of kind:RelationKind * props: 'a
+        | R of kind:RelationKind * relationship:'a
 
-    let (-->) ln rn = Right(ln, rn)
-    let (<--) ln rn = Left(ln, rn)
+    /// A partial left-arrow relationship. You should pass this to the (|-) operator.
+    type LeftPartial<'a> =
+        | LP of leftName:string * relationship:'a
+
+    /// A partial right-arrow relationship. You should pass this to the (|->) operator.
+    type RightPartial<'a> =
+        | RP of leftName:string * relationship:'a
+
+    /// Right-arrow relationship, first part. Usage:
+    /// "name1" -|relationType|-> "name2"
+    let inline (-|) leftName relationship = 
+        RP(leftName, relationship)
+
+    /// Right-arrow relationship, second part. Usage:
+    /// "name1" -|relationType|-> "name2"
+    let inline (|->) (RP(leftName, relationship)) rightName = 
+        R(Right(leftName, rightName), relationship)
+
+    /// Left-arrow relationship, first part. Usage:
+    /// "name1" <-|relationType|- "name2"
+    let inline (<-|) (leftName) relationship = 
+        LP(leftName, relationship)
+
+    /// Left-arrow relationship, second part. Usage:
+    /// "name1" <-|relationType|- "name2"
+    let inline (|-) (LP(leftName, relationship)) rightName = 
+        R(Left(leftName, rightName), relationship)
 
     (*
         TODO: I would really love to figure out how to enable something like this syntax:
@@ -177,11 +207,11 @@ module Cypher =
             Cy(f +> fun b ->
                 newLine b
                 match kind with
-                | Left(ln, rn) ->
+                | Left(leftName=ln; rightName=rn) ->
                     bprintf b "CREATE (%s)<-[:%s" (escapeIdent ln) (escapeIdent relType)
                     writeProps b props
                     bprintf b "]-(%s)" (escapeIdent rn)
-                | Right(ln, rn) ->
+                | Right(leftName=ln; rightName=rn) ->
                     bprintf b "CREATE (%s)-[:%s" (escapeIdent ln) (escapeIdent relType)
                     writeProps b props
                     bprintf b "]->(%s)" (escapeIdent rn)
@@ -196,11 +226,11 @@ module Cypher =
             Cy(f +> fun b ->
                 newLine b
                 match kind with
-                | Left(ln, rn) ->
+                | Left(leftName=ln; rightName=rn) ->
                     bprintf b "CREATE UNIQUE (%s)<-[:%s" (escapeIdent ln) (escapeIdent relType)
                     writeProps b props
                     bprintf b "]-(%s)" (escapeIdent rn)
-                | Right(ln, rn) ->
+                | Right(leftName=ln; rightName=rn) ->
                     bprintf b "CREATE UNIQUE (%s)-[:%s" (escapeIdent ln) (escapeIdent relType)
                     writeProps b props
                     bprintf b "]->(%s)" (escapeIdent rn)
@@ -213,7 +243,8 @@ module Cypher =
                 bprintf b "CREATE UNIQUE %s" cypherStatement
             )
 
-        // TODO: http://docs.neo4j.org/chunked/milestone/cypher-query-lang.html
+        // TODO: WHERE and RETURN, for starters.
+        // http://docs.neo4j.org/chunked/milestone/cypher-query-lang.html
 
     let cypher = CypherBuilderM()
 

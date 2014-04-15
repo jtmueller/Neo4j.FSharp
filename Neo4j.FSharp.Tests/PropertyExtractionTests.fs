@@ -64,11 +64,11 @@ module PropertyExtractionTests =
         let values = { 
             IntProp = 13
             StrProp = "foo"
-            DateProp = new DateTime(2063, 4, 5)
-            DtoProp = new DateTimeOffset(new DateTime(2063, 4, 5), TimeSpan.FromHours(6.3))
+            DateProp = DateTime(2063, 4, 5)
+            DtoProp = DateTimeOffset(DateTime(2063, 4, 5), TimeSpan.FromHours(-6.0))
             FloatProp = 95.2
             BoolProp = true
-            GuidProp = new Guid("e8ce994d-74f2-492e-8e71-dbce8581622d")
+            GuidProp = Guid("e8ce994d-74f2-492e-8e71-dbce8581622d")
             BigIntProp = 295712958751897189I
         }
         let expected = [| ("IntProp", box values.IntProp); ("StrProp", box values.StrProp); ("DateProp", box values.DateProp);
@@ -86,11 +86,11 @@ module PropertyExtractionTests =
             SampleClass(
                 IntProp = 13,
                 StrProp = "foo",
-                DateProp = new DateTime(2063, 4, 5),
-                DtoProp = new DateTimeOffset(new DateTime(2063, 4, 5), TimeSpan.FromHours(6.3)),
+                DateProp = DateTime(2063, 4, 5),
+                DtoProp = DateTimeOffset(DateTime(2063, 4, 5), TimeSpan.FromHours(-6.0)),
                 FloatProp = 95.2,
                 BoolProp = true,
-                GuidProp = new Guid("e8ce994d-74f2-492e-8e71-dbce8581622d"),
+                GuidProp = Guid("e8ce994d-74f2-492e-8e71-dbce8581622d"),
                 BigIntProp = 295712958751897189I)
         let expected = [| ("IntProp", box values.IntProp); ("StrProp", box values.StrProp); ("DateProp", box values.DateProp);
                           ("DtoProp", box values.DtoProp); ("FloatProp", box values.FloatProp);

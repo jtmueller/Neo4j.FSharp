@@ -7,29 +7,29 @@ type Person =
       Age : int
       Sex : char }
 
-type Room =
+type Item =
     { Name : string
       Desc : string }
 
 // Marker type for relationship that has no properties
-type StandingIn() = class end
+type Has() = class end
 
 type Friend = { Since : int }
 
 cypher {
-    raw "CREATE (p1:Person { Name: 'Andres', Age: 27, Sex: 'M' })"
     createEmpty "n1" "Foo"
-    createType "p2" "Person" [ "Name", box "Lisa"
-                               "Age", box 32
-                               "Sex", box "F" ]
-    create "p3" { Name = "Random J. Person"
-                  Age = 26
-                  Sex = 'M' }
-    create "r1" { Name = "Outside Farmhouse"
-                  Desc = "You are outside a small white farmhouse. There is a mailbox here." }
+    raw "CREATE (ron:Person { Name: 'Ron', Age: 17, Sex: 'M' })"
+    createType "harry" "Person" [ "Name", box "Harry"
+                                  "Age", box 17
+                                  "Sex", box "M" ]
+    create "arthur" { Name = "Arthur"
+                      Age = 42
+                      Sex = 'M' }
+    create "towel" { Name = "Arthur's Towel"
+                     Desc = "It has green and white stripes." }
 
-    relate (R("p2" --> "p3", { Friend.Since = 1982 }))
-    relate (R("p3" --> "r1", StandingIn()))
+    relate ("harry" <-|{ Friend.Since = 1997 }|- "ron")
+    relate ("arthur" -|Has()|-> "towel")
 }
 |> CypherBuilder.build
 |> printfn "%s"

@@ -38,6 +38,7 @@ type PropertyExtractor<'a> private () =
                 let sequence = Expr.Coerce(Expr.Var(instanceVar), typeof<seq<string * obj>>)
                 let toArray = <@ Array.ofSeq (%%sequence : seq<string * obj>) @>
                 Expr.NewTuple [ name; toArray ]
+            // TODO: IDictionary<string, obj>
             elif FSharpType.IsRecord t then
                 let getProps = 
                     FSharpType.GetRecordFields(t, BindingFlags.Public ||| BindingFlags.Instance) 
@@ -57,7 +58,10 @@ type PropertyExtractor<'a> private () =
                     |> buildGetProperties instanceVar
                 Expr.NewTuple [ name; getProps ]
 
-        let compiled = Evaluation.eval [] (Expr.Lambda(instanceVar, createOutput))
+        let compiled = 
+            Expr.Lambda(instanceVar, createOutput)
+            |> Evaluation.eval []
+
         compiled :?> 'a -> (string * array<string * obj>)
 
     /// Extracts the type name and key/value pairs for all non-indexed properties of the given object.
