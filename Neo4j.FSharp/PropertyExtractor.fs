@@ -10,6 +10,10 @@ open Swensen.Unquote
 // 100,000 instances of the same three-property class, Release build:
 // Real: 00:00:03.182, CPU: 00:00:03.187, GC gen0: 121, gen1: 1, gen2: 0
 
+// TODO: Would we get even better performance generating F# source code and compiling it to a dynamic assembly?
+// http://fsharp.github.io/FSharp.Compiler.Service/compiler.html
+// Hard part would be that the dynamic assembly would need references to the types being serialized.
+
 type PropertyExtractor<'a> private () =
 
     static let buildGetProperties instanceVar (props : PropertyInfo[]) =
