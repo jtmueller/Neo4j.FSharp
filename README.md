@@ -19,8 +19,8 @@ any .NET type (including F# Records) to Cypher syntax.
         { Name : string
           Desc : string }
 
-    // Marker type for relationship that has no properties
-    type Has() = class end
+    // Marker type for a relationship that has no properties
+    type Has = Has
 
     type Friend = { Since : int }
 

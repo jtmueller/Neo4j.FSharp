@@ -14,6 +14,7 @@ type Item =
 type TestUnion =
     | Monster of name:string * hitPoints:int
 
+// Marker type for a relationship that has no properties
 type Has = Has
 
 type Friend = { Since : int }
