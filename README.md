@@ -41,6 +41,8 @@ any .NET type (including F# Records) to Cypher syntax.
         relate ("harry" <-|{ Friend.Since = 1997 }|- "ron")
         relate ("arthur" -|Has|-> "towel")
     }
+    |> CypherBuilder.build
+    |> printfn "%s"
 
 ###Output
 
