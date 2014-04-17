@@ -1,7 +1,7 @@
 ﻿namespace Neo4j.FSharp
 
 open System
-open System.Collections.Concurrent
+open System.Collections.Generic
 open System.Reflection
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Quotations
@@ -41,9 +41,8 @@ type PropertyExtractor<'a> private () =
             let values = Expr.Value Array.empty<string * obj>
             Expr.NewTuple [ name; values ]
 
-        cases 
-        |> Array.map (fun case -> case, Expr.UnionCaseTest(Expr.Var(instanceVar), case))
-        |> Array.fold (fun preceding (case:UnionCaseInfo, caseTest) ->
+        cases |> Array.fold (fun preceding case ->
+            let caseTest = Expr.UnionCaseTest(Expr.Var(instanceVar), case)
             let name = Expr.Value case.Name
             let values = case.GetFields() |> buildGetProperties instanceVar
             let thenExpr = Expr.NewTuple [ name; values ]
@@ -62,7 +61,11 @@ type PropertyExtractor<'a> private () =
                 let sequence = Expr.Coerce(Expr.Var(instanceVar), typeof<seq<string * obj>>)
                 let toArray = <@ Array.ofSeq (%%sequence : seq<string * obj>) @>
                 Expr.NewTuple [ name; toArray ]
-            // TODO: IDictionary<string, obj>
+            elif typeof<seq<KeyValuePair<string, obj>>>.IsAssignableFrom t then
+                // This case also handles IDictionary<string, obj>
+                let sequence = Expr.Coerce(Expr.Var(instanceVar), typeof<seq<KeyValuePair<string, obj>>>)
+                let toArray = <@ (%%sequence : seq<KeyValuePair<string, obj>>) |> Seq.map (fun x -> x.Key, x.Value) |> Array.ofSeq @>
+                Expr.NewTuple [ name; toArray ]
             elif FSharpType.IsRecord t then
                 let getProps = 
                     FSharpType.GetRecordFields(t, BindingFlags.Public ||| BindingFlags.Instance) 

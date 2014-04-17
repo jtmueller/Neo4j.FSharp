@@ -71,6 +71,12 @@ module PropertyExtractionTests =
         test <@ props.Length = 0 @>
 
     [<Fact>]
+    let ``Props: Converts IDictionary<string, obj> to array<string * obj>`` () =
+        let values = dict [| "a", box 1; "b", box 2; "c", box 3; "d", box 4 |]
+        let _, props = PropertyExtractor.getProperties values
+        test <@ props = [| "a", box 1; "b", box 2; "c", box 3; "d", box 4 |] @>
+
+    [<Fact>]
     let ``Props: Can serialize a Record`` () =
         let values = { 
             IntProp = 13

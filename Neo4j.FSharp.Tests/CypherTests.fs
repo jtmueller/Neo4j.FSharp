@@ -60,13 +60,23 @@ module CypherTests =
         test <@ output = expected @>
 
     [<Fact>]
-    let ``Cypher: Can create a node from a property bag`` () = 
+    let ``Cypher: Can create a node from a property list`` () = 
         let expected = """CREATE (harry:Person { Name: "Harry", Age: 17, Sex: "M" })"""
         let output = 
             cypher { 
                 createType "harry" "Person" [ "Name", box "Harry"
                                               "Age", box 17
                                               "Sex", box "M" ]
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+
+    [<Fact>]
+    let ``Cypher: Can create a node from a dictionary`` () = 
+        let dictionary = dict [ "Name", box "Harry"; "Age", box 17; "Sex", box "M" ]
+        let expected = """CREATE (harry:Person { Name: "Harry", Age: 17, Sex: "M" })"""
+        let output = 
+            cypher { 
+                createType "harry" "Person" dictionary
             } |> CypherBuilder.build
         test <@ output = expected @>
         
