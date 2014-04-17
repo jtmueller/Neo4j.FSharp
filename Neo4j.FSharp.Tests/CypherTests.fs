@@ -19,7 +19,7 @@ module CypherTests =
         member val Name = "" with get, set
         member val Desc = "" with get, set
 
-    type Has() = class end
+    type Has = Has
 
     type SupportedPrimitives() =
         member val String = "hello" with get
@@ -41,6 +41,9 @@ module CypherTests =
         member val DateTimeOffset = DateTimeOffset(DateTime(2063, 4, 5), TimeSpan.FromHours(-6.0)) with get
         member val Guid = Guid("e8ce994d-74f2-492e-8e71-dbce8581622d") with get
         member val Bytes = [| 104uy; 101uy; 108uy; 108uy; 111uy |] with get
+
+    type TestUnion =
+        | Monster of name:string * hitPoints:int
 
     [<Fact>]
     let ``Cypher: Can echo a raw statement`` () =
@@ -90,6 +93,15 @@ module CypherTests =
         test <@ output = expected @>
 
     [<Fact>]
+    let ``Cypher: Can create a node from a discriminated union`` () =
+        let expected = """CREATE (petunias:Monster { name: "Agrajag", hitPoints: 500 })"""
+        let output =
+            cypher {
+                create "petunias" (Monster("Agrajag", 500))
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+
+    [<Fact>]
     let ``Cypher: Can create a relationship with properties`` () =
         let expected = "CREATE (harry)<-[:Friend { Since: 1997 }]-(ron)"
         let output =
@@ -103,7 +115,7 @@ module CypherTests =
         let expected = "CREATE (arthur)-[:Has]->(towel)"
         let output =
             cypher {
-                relate ("arthur" -|Has()|-> "towel")
+                relate ("arthur" -|Has|-> "towel")
             } |> CypherBuilder.build
         test <@ output = expected @>
 
@@ -116,3 +128,17 @@ module CypherTests =
             } |> CypherBuilder.build
         test <@ output = expected @>
 
+//    [<Fact>]
+//    let ``Cypher: Can create a set of entities`` () =
+//        let expected = ""
+//        let people = [
+//            { Name="Fred"; Age=21; Sex='M' }
+//            { Name="George"; Age=21; Sex='M' }
+//            { Name="Hermione"; Age=17; Sex='F' }
+//        ]
+//        let output =
+//            cypher {
+//                for person in people do
+//                    create "" person
+//            } |> CypherBuilder.build
+//        test <@ output = expected @>

@@ -59,7 +59,6 @@
     <Compile Include="DynamicOperators.fs" />
     <Compile Include="EvaluationException.fs" />
     <Compile Include="Evaluation.fs" />
-    <Compile Include="ReflectionPropertyExtractor.fs" />
     <Compile Include="PropertyExtractor.fs" />
     <Compile Include="CypherBuilder.fs" />
     <Compile Include="GraphDatabase.fs" />

@@ -36,11 +36,11 @@ any .NET type (including F# Records) to Cypher syntax.
         create "towel" { Name = "Arthur's Towel"
                          Desc = "It has green and white stripes." }
 
+        create "petunias" (Monster("Agrajag", 500))
+
         relate ("harry" <-|{ Friend.Since = 1997 }|- "ron")
-        relate ("arthur" -|Has()|-> "towel")
+        relate ("arthur" -|Has|-> "towel")
     }
-    |> CypherBuilder.build
-    |> printfn "%s"
 
 ###Output
 
@@ -49,5 +49,6 @@ any .NET type (including F# Records) to Cypher syntax.
     CREATE (harry:Person { Name: "Harry", Age: 17, Sex: "M" })
     CREATE (arthur:Person { Name: "Arthur", Age: 42, Sex: "M" })
     CREATE (towel:Item { Name: "Arthur\'s Towel", Desc: "It has green and white stripes." })
+    CREATE (petunias:Monster { name: "Agrajag", hitPoints: 500 })
     CREATE (harry)<-[:Friend { Since: 1997 }]-(ron)
     CREATE (arthur)-[:Has]->(towel)

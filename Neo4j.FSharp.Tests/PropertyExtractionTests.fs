@@ -41,6 +41,17 @@ module PropertyExtractionTests =
         static member val StaticProp = 83 with get, set
         member val NonStaticProp = 34 with get, set
 
+    type SingleCaseNoValues = SingleCaseNoValues
+
+    type SingleCaseAnonValues = SingleCaseAnonValues of int * string * bool
+
+    type SingleCaseNamedValues = SingleCaseNamedValues of intVal:int * stringVal:string * boolVal:bool
+
+    type MultiCase =
+        | Case1 of birthday:DateTime
+        | Case2 of isFamous:bool
+        | Case3 of name:string * age:int
+
     [<Fact>]
     let ``Props: Can pass through an array of the right type`` () =
         let values = [| "a", box 1; "b", box 2; "c", box 3; "d", box 4 |]
@@ -102,6 +113,37 @@ module PropertyExtractionTests =
         test <@ props = expected @>
 
     [<Fact>]
+    let ``Props: Can serialize a single-case discriminated union with no values`` () =
+        let value = SingleCaseNoValues
+        let name, props = PropertyExtractor.getProperties value
+        test <@ name = "SingleCaseNoValues" @>
+        test <@ props.Length = 0 @>
+
+    [<Fact>]
+    let ``Props: Can serialize a single-case discriminated union with anonymous values`` () =
+        let values = SingleCaseAnonValues(42, "hello", true)
+        let expected = [| "Item1", box 42; "Item2", box "hello"; "Item3", box true |]
+        let name, props = PropertyExtractor.getProperties values
+        test <@ name = "SingleCaseAnonValues" @>
+        test <@ props = expected @>
+
+    [<Fact>]
+    let ``Props: Can serialize a single-case discriminated union with named values`` () =
+        let values = SingleCaseNamedValues(42, "hello", true)
+        let expected = [| "intVal", box 42; "stringVal", box "hello"; "boolVal", box true |]
+        let name, props = PropertyExtractor.getProperties values
+        test <@ name = "SingleCaseNamedValues" @>
+        test <@ props = expected @>
+
+    [<Fact>]
+    let ``Props: Can serialize a multi-case discriminated union`` () =
+        let values = Case3("Fred", 13)
+        let expected = [| "name", box "Fred"; "age", box 13 |]
+        let name, props = PropertyExtractor.getProperties values
+        test <@ name = "Case3" @>
+        test <@ props = expected @>
+
+    [<Fact>]
     let ``Props: non-public properties are omitted`` () =
         let values = ClassWithNonPublic(PublicProp = 97, InternalProp = 93)
         let expected = [| "PublicProp", box 97 |]
@@ -130,8 +172,4 @@ module PropertyExtractionTests =
         let values = 1, 3, "blue"
         raises<TypeInitializationException> <@ PropertyExtractor.getProperties values |> ignore @>
 
-    [<Fact>]
-    let ``Props: Discriminated Unions are rejected`` () =
-        let values = Some 1
-        raises<TypeInitializationException> <@ PropertyExtractor.getProperties values |> ignore @>
 

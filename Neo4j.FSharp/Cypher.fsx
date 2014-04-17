@@ -11,8 +11,10 @@ type Item =
     { Name : string
       Desc : string }
 
-// Marker type for relationship that has no properties
-type Has() = class end
+type TestUnion =
+    | Monster of name:string * hitPoints:int
+
+type Has = Has
 
 type Friend = { Since : int }
 
@@ -28,8 +30,10 @@ cypher {
     create "towel" { Name = "Arthur's Towel"
                      Desc = "It has green and white stripes." }
 
+    create "petunias" (Monster("Agrajag", 500))
+
     relate ("harry" <-|{ Friend.Since = 1997 }|- "ron")
-    relate ("arthur" -|Has()|-> "towel")
+    relate ("arthur" -|Has|-> "towel")
 }
 |> CypherBuilder.build
 |> printfn "%s"

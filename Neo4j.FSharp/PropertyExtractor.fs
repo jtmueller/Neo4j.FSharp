@@ -7,8 +7,13 @@ open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Quotations
 open Swensen.Unquote
 
+// THIS CODE:
 // 100,000 instances of the same three-property class, Release build:
 // Real: 00:00:03.182, CPU: 00:00:03.187, GC gen0: 121, gen1: 1, gen2: 0
+
+// PURE REFLECTION:
+// 100,000 instances of the same three-property class, Release build:
+// Real: 00:00:10.140, CPU: 00:00:10.140, GC gen0: 112, gen1: 2, gen2: 0
 
 // TODO: Would we get even better performance generating F# source code and compiling it to a dynamic assembly?
 // http://fsharp.github.io/FSharp.Compiler.Service/compiler.html
@@ -29,6 +34,21 @@ type PropertyExtractor<'a> private () =
             |> List.ofSeq
         Expr.NewArray(typeof<string * obj>, propVals)
 
+    static let buildUnionTest instanceVar (t : Type) =
+        let cases = FSharpType.GetUnionCases(t)
+        let defaultCase =
+            let name = Expr.Value "Unknown"
+            let values = Expr.Value Array.empty<string * obj>
+            Expr.NewTuple [ name; values ]
+
+        cases 
+        |> Array.map (fun case -> case, Expr.UnionCaseTest(Expr.Var(instanceVar), case))
+        |> Array.fold (fun preceding (case:UnionCaseInfo, caseTest) ->
+            let name = Expr.Value case.Name
+            let values = case.GetFields() |> buildGetProperties instanceVar
+            let thenExpr = Expr.NewTuple [ name; values ]
+            Expr.IfThenElse(caseTest, thenExpr, preceding)) defaultCase
+
     static let buildExpression (t : Type) =
         let name = Expr.Value t.Name
         let instanceVar = Var.Global("x", t)
@@ -48,14 +68,12 @@ type PropertyExtractor<'a> private () =
                     FSharpType.GetRecordFields(t, BindingFlags.Public ||| BindingFlags.Instance) 
                     |> buildGetProperties instanceVar
                 Expr.NewTuple [ name; getProps ]
+            elif FSharpType.IsUnion t then
+                buildUnionTest instanceVar t                
             elif FSharpType.IsTuple t then
                 raise <| 
                     NotImplementedException
                        ("Tuples are not supported. Neo4j property lists must have both names and values.")
-            elif FSharpType.IsUnion t then
-                raise <| 
-                    NotImplementedException
-                       ("Discriminated Unions are not supported. Neo4j property lists must have both names and values.")
             else
                 let getProps = 
                     t.GetProperties(BindingFlags.Public ||| BindingFlags.Instance) 
