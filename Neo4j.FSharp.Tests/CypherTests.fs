@@ -48,93 +48,99 @@ module CypherTests =
     [<Fact>]
     let ``Cypher: Can echo a raw statement`` () =
         let input = "CREATE (ron:Person { Name: 'Ron', Age: 17, Sex: 'M' })"
-        let output =
+        let output, _ =
             cypher { raw input } |> CypherBuilder.build
         test <@ output = input @>
 
     [<Fact>]
     let ``Cypher: Can create an empty node`` () =
         let expected = "CREATE (n1:Foo)"
-        let output = 
+        let output, _ = 
             cypher { createEmpty "n1" "Foo" } |> CypherBuilder.build
         test <@ output = expected @>
 
     [<Fact>]
     let ``Cypher: Can create a node from a property list`` () = 
-        let expected = """CREATE (harry:Person { Name: "Harry", Age: 17, Sex: "M" })"""
-        let output = 
+        let expected = """CREATE (harry:Person {p1})"""
+        let expParams = [| "Name", box "Harry"; "Age", box 17; "Sex", box "M" |]
+        let output, ps = 
             cypher { 
-                createType "harry" "Person" [ "Name", box "Harry"
-                                              "Age", box 17
-                                              "Sex", box "M" ]
+                createType "harry" "Person" expParams
             } |> CypherBuilder.build
         test <@ output = expected @>
+        test <@ ps.ContainsKey "p1" @>
+        test <@ ps.["p1"] :?> (string * obj)[] = expParams @>
 
     [<Fact>]
-    let ``Cypher: Can create a node from a dictionary`` () = 
-        let dictionary = dict [ "Name", box "Harry"; "Age", box 17; "Sex", box "M" ]
-        let expected = """CREATE (harry:Person { Name: "Harry", Age: 17, Sex: "M" })"""
-        let output = 
+    let ``Cypher: Can create a node from a dictionary`` () =
+        let expParams = [| "Name", box "Harry"; "Age", box 17; "Sex", box "M" |]
+        let dictionary = dict expParams
+        let expected = """CREATE (harry:Person {p1})"""
+        let output, ps = 
             cypher { 
                 createType "harry" "Person" dictionary
             } |> CypherBuilder.build
         test <@ output = expected @>
+        test <@ ps.ContainsKey "p1" @>
+        test <@ ps.["p1"] :?> (string * obj)[] = expParams @>
         
     [<Fact>]
     let ``Cypher: Can create a node from a record`` () = 
-        let expected = """CREATE (arthur:Person { Name: "Arthur", Age: 42, Sex: "M" })"""
-        let output = 
+        let record = { Name = "Arthur"; Age = 42; Sex = 'M' }
+        let expParams = [| "Name", box record.Name; "Age", box record.Age; "Sex", box record.Sex |]
+        let expected = """CREATE (arthur:Person {p1})"""
+        let output, ps = 
             cypher { 
-                create "arthur" { Name = "Arthur"
-                                  Age = 42
-                                  Sex = 'M' }
+                create "arthur" record
             } |> CypherBuilder.build
         test <@ output = expected @>
+        test <@ ps.ContainsKey "p1" @>
+        test <@ ps.["p1"] :?> (string * obj)[] = expParams @>
 
     [<Fact>]
     let ``Cypher: Can create a node from a class`` () =
-        let expected = """CREATE (towel:Item { Name: "Arthur\'s Towel", Desc: "It has green and white stripes." })"""
-        let output =
+        let value = Item(Name="Arthur's Towel", Desc="It has green and white stripes.")
+        let expParams = [| "Name", box value.Name; "Desc", box value.Desc |]
+        let expected = """CREATE (towel:Item {p1})"""
+        let output, ps =
             cypher {
-                create "towel" 
-                    (Item(Name="Arthur's Towel", 
-                          Desc="It has green and white stripes."))
+                create "towel" value
             } |> CypherBuilder.build
         test <@ output = expected @>
+        test <@ ps.ContainsKey "p1" @>
+        test <@ ps.["p1"] :?> (string * obj)[] = expParams @>
 
     [<Fact>]
     let ``Cypher: Can create a node from a discriminated union`` () =
-        let expected = """CREATE (petunias:Monster { name: "Agrajag", hitPoints: 500 })"""
-        let output =
+        let value = Monster("Agrajag", 500)
+        let expParams = [| "name", box "Agrajag"; "hitPoints", box 500 |]
+        let expected = """CREATE (petunias:Monster {p1})"""
+        let output, ps =
             cypher {
-                create "petunias" (Monster("Agrajag", 500))
+                create "petunias" value
             } |> CypherBuilder.build
         test <@ output = expected @>
+        test <@ ps.ContainsKey "p1" @>
+        test <@ ps.["p1"] :?> (string * obj)[] = expParams @>
 
     [<Fact>]
     let ``Cypher: Can create a relationship with properties`` () =
-        let expected = "CREATE (harry)<-[:Friend { Since: 1997 }]-(ron)"
-        let output =
+        let expParams = [| "Since", box 1997 |]
+        let expected = "CREATE (harry)<-[:Friend {p1}]-(ron)"
+        let output, ps =
             cypher {
                 relate ("harry" <-|{ Friend.Since = 1997 }|- "ron")
             } |> CypherBuilder.build
         test <@ output = expected @>
+        test <@ ps.ContainsKey "p1" @>
+        test <@ ps.["p1"] :?> (string * obj)[] = expParams @>
 
     [<Fact>]
     let ``Cypher: Can create a relationship without properties`` () =
         let expected = "CREATE (arthur)-[:Has]->(towel)"
-        let output =
+        let output, _ =
             cypher {
                 relate ("arthur" -|Has|-> "towel")
-            } |> CypherBuilder.build
-        test <@ output = expected @>
-
-    [<Fact>]
-    let ``Cypher: Can encode supported primitive types`` () =
-        let expected = """CREATE (types:SupportedPrimitives { String: "hello", SByte: 42, Byte: 42, Int16: 42, UInt16: 42, Int: 42, UInt: 42, Int64: 42, UInt64: 42, BigInt: "42", Float32: 89.3, Float: 89.3, Decimal: 89.3, Char: "c", Boolean: true, DateTime: "2063-04-05T00:00:00.0000000-05:00", DateTimeOffset: "2063-04-05T00:00:00.0000000-06:00", Guid: "e8ce994d-74f2-492e-8e71-dbce8581622d", Bytes: "aGVsbG8=" })"""
-        let output =
-            cypher {
-                create "types" (SupportedPrimitives())
             } |> CypherBuilder.build
         test <@ output = expected @>
 
