@@ -144,17 +144,24 @@ module CypherTests =
             } |> CypherBuilder.build
         test <@ output = expected @>
 
-//    [<Fact>]
-//    let ``Cypher: Can create a set of entities`` () =
-//        let expected = ""
-//        let people = [
-//            { Name="Fred"; Age=21; Sex='M' }
-//            { Name="George"; Age=21; Sex='M' }
-//            { Name="Hermione"; Age=17; Sex='F' }
-//        ]
-//        let output =
-//            cypher {
-//                for person in people do
-//                    create "" person
-//            } |> CypherBuilder.build
-//        test <@ output = expected @>
+    [<Fact>]
+    let ``Cypher: Can create a set of entities`` () =
+        let expected = "CREATE (:Person {p1})\r\nCREATE (:Person {p2})\r\nCREATE (:Person {p3})"
+        let people = [
+            { Name="Fred"; Age=21; Sex='M' }
+            { Name="George"; Age=21; Sex='M' }
+            { Name="Hermione"; Age=17; Sex='F' }
+        ]
+        let expParams1 = [| "Name", box "Fred"; "Age", box 21; "Sex", box 'M' |]
+        let expParams2 = [| "Name", box "George"; "Age", box 21; "Sex", box 'M' |]
+        let expParams3 = [| "Name", box "Hermione"; "Age", box 17; "Sex", box 'F' |]
+        let output, ps =
+            cypher {
+                createMany people
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+        test <@ ps.ContainsKey "p1" && ps.ContainsKey "p2" && ps.ContainsKey "p3" @>
+        test <@ ps.["p1"] :?> (string * obj)[] = expParams1 @>
+        test <@ ps.["p2"] :?> (string * obj)[] = expParams2 @>
+        test <@ ps.["p3"] :?> (string * obj)[] = expParams3 @>
+

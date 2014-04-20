@@ -59,6 +59,9 @@ module private CypherUtils =
         b.Append(String.Join(", ", mapped)) |> ignore
         bprintf b " }"
 
+    let inline newLine (b:StringBuilder) =
+        if b.Length > 0 then b.AppendLine() |> ignore
+
 module Cypher =
     open CypherUtils
 
@@ -71,9 +74,10 @@ module Cypher =
             "p" + (string index)
         member private x.CurIndex = idx
         member internal x.Merge(other:PropertyBag) =
-            let mutable initial = idx
-            while initial <> Interlocked.CompareExchange(&idx, other.CurIndex, initial) do
-                initial <- idx
+            if other.CurIndex > idx then
+                let mutable initial = idx
+                while initial <> Interlocked.CompareExchange(&idx, other.CurIndex, initial) do
+                    initial <- idx
             for kvp in other.Params do
                 x.Params.[kvp.Key] <- kvp.Value
                 
@@ -122,11 +126,14 @@ module Cypher =
     let inline (|-) (LP(leftName, relationship)) rightName = 
         R(Left(leftName, rightName), relationship)
 
+    [<NoEquality; NoComparison; Sealed>]
     type CypherBuilderM internal () =
-        let newLine (b:StringBuilder) =
-            if b.Length > 0 then b.AppendLine() |> ignore
-        
-        member __.Yield(()) = Cy((fun _ -> ()), PropertyBag())
+            
+        member __.Yield(()) = __.Zero()
+        member __.Zero() = Cy((fun _ -> ()), PropertyBag())
+        member __.Combine(Cy(f, pf), Cy(g, pg)) =
+            pf.Merge pg
+            Cy(f +> g, pf)
 
         /// Adds a raw Cypher statement to the query without alteration.
         [<CustomOperation("raw", MaintainsVariableSpace=true)>]
@@ -159,12 +166,47 @@ module Cypher =
             p.Params.[paramName] <- props
             Cy((f +> fun b ->
                 newLine b
-                bprintf b "CREATE (%s:%s {%s})" 
-                    (escapeIdent name) (escapeIdent nodeType) paramName), p)
+                if props.Length = 0 then
+                    bprintf b "CREATE (%s:%s)" 
+                        (escapeIdent name) (escapeIdent nodeType)
+                else
+                    p.Params.[paramName] <- props
+                    bprintf b "CREATE (%s:%s {%s})" 
+                        (escapeIdent name) (escapeIdent nodeType) paramName), p)
+
+        /// Creates many nodes based on the type name and public non-indexed properties of the given entities.
+        [<CustomOperation("createMany", MaintainsVariableSpace=true)>]
+        member __.CreateMany(Cy(f, p), entities:seq<'a>) =
+            let entityVals = entities |> Seq.map PropertyExtractor.getProperties
+            Cy((f +> fun b ->
+                for nodeType, props in entityVals do
+                    newLine b
+                    let paramName = p.NextId
+                    if props.Length = 0 then
+                        bprintf b "CREATE (:%s)" (escapeIdent nodeType)
+                    else
+                        p.Params.[paramName] <- props
+                        bprintf b "CREATE (:%s {%s})" 
+                            (escapeIdent nodeType) paramName), p)
+
+        [<CustomOperation("createUnique", MaintainsVariableSpace=true)>]
+        member __.CreateUnique(Cy(f, p), cypherStatement) =
+            Cy((f +> fun b ->
+                newLine b
+                bprintf b "CREATE UNIQUE %s" cypherStatement), p)
+
+        [<CustomOperation("createUniqueParams", MaintainsVariableSpace=true)>]
+        member __.CreateUniqueParams(Cy(f, p), cypherStatement, parameters:'a) =
+            let _, props = PropertyExtractor.getProperties parameters
+            for key, value in props do
+                p.Params.[key] <- value
+            Cy((f +> fun b ->
+                newLine b
+                bprintf b "CREATE UNIQUE %s" cypherStatement), p)
 
         /// Inserts a Cypher MATCH statement into the query.
-        [<CustomOperation("getMatch", MaintainsVariableSpace=true)>]
-        member __.GetMatch(Cy(f, p), matchExpr) =
+        [<CustomOperation("matchWith", MaintainsVariableSpace=true)>]
+        member __.MatchWith(Cy(f, p), matchExpr) =
             Cy((f +> fun b ->
                 newLine b
                 bprintf b "MATCH %s" matchExpr), p)
@@ -172,6 +214,26 @@ module Cypher =
         /// Inserts a Cypher OPTIONAL MATCH statement into the query.
         [<CustomOperation("optMatch", MaintainsVariableSpace=true)>]
         member __.OptMatch(Cy(f, p), matchExpr) =
+            Cy((f +> fun b ->
+                newLine b
+                bprintf b "OPTIONAL MATCH %s" matchExpr), p)
+
+        /// Inserts a parameterized Cypher MATCH statement into the query.
+        [<CustomOperation("matchWithParams", MaintainsVariableSpace=true)>]
+        member __.MatchWithParams<'a>(Cy(f, p), matchExpr, parameters:'a) =
+            let _, props = PropertyExtractor.getProperties parameters
+            for key, value in props do
+                p.Params.[key] <- value
+            Cy((f +> fun b ->
+                newLine b
+                bprintf b "MATCH %s" matchExpr), p)
+
+        /// Inserts a parameterized Cypher MATCH statement into the query.
+        [<CustomOperation("optMatchWithParams", MaintainsVariableSpace=true)>]
+        member __.OptMatchWithParams<'a>(Cy(f, p), matchExpr, parameters:'a) =
+            let _, props = PropertyExtractor.getProperties parameters
+            for key, value in props do
+                p.Params.[key] <- value
             Cy((f +> fun b ->
                 newLine b
                 bprintf b "OPTIONAL MATCH %s" matchExpr), p)
@@ -188,8 +250,6 @@ module Cypher =
         /// use "raw" for now.
         [<CustomOperation("relate", MaintainsVariableSpace=true)>]
         member __.Relate<'a>(Cy(f, p), R(kind, entity:'a)) =
-            // TODO: if we dump the PropertyExtractor in favor of JSON.NET, make a module to get 
-            // and cache the number of properties and type name, Discriminated Union aware.
             let relType, props = PropertyExtractor.getProperties entity
             let paramName = p.NextId
             if props.Length > 0 then
@@ -197,20 +257,18 @@ module Cypher =
             Cy((f +> fun b ->
                 newLine b
                 match kind with
+                | Left(leftName=ln; rightName=rn) when props.Length = 0 ->
+                    bprintf b "CREATE (%s)<-[:%s]-(%s)" 
+                        (escapeIdent ln) (escapeIdent relType) (escapeIdent rn)                        
                 | Left(leftName=ln; rightName=rn) ->
-                    if props.Length = 0 then
-                        bprintf b "CREATE (%s)<-[:%s]-(%s)" 
-                            (escapeIdent ln) (escapeIdent relType) (escapeIdent rn)                        
-                    else
-                        bprintf b "CREATE (%s)<-[:%s {%s}]-(%s)" 
-                            (escapeIdent ln) (escapeIdent relType) paramName (escapeIdent rn)
+                    bprintf b "CREATE (%s)<-[:%s {%s}]-(%s)" 
+                        (escapeIdent ln) (escapeIdent relType) paramName (escapeIdent rn)
+                | Right(leftName=ln; rightName=rn) when props.Length = 0 ->
+                    bprintf b "CREATE (%s)-[:%s]->(%s)" 
+                        (escapeIdent ln) (escapeIdent relType) (escapeIdent rn)                        
                 | Right(leftName=ln; rightName=rn) ->
-                    if props.Length = 0 then
-                        bprintf b "CREATE (%s)-[:%s]->(%s)" 
-                            (escapeIdent ln) (escapeIdent relType) (escapeIdent rn)                        
-                    else
-                        bprintf b "CREATE (%s)-[:%s {%s}]->(%s)" 
-                            (escapeIdent ln) (escapeIdent relType) paramName (escapeIdent rn)), p)
+                    bprintf b "CREATE (%s)-[:%s {%s}]->(%s)" 
+                        (escapeIdent ln) (escapeIdent relType) paramName (escapeIdent rn)), p)
 
         /// Creates a new relationship between two named nodes specified earlier in the query.
         /// Does not currently support assigning a name to the created relationship or property matching
@@ -224,26 +282,18 @@ module Cypher =
             Cy((f +> fun b ->
                 newLine b
                 match kind with
+                | Left(leftName=ln; rightName=rn) when props.Length = 0 ->
+                    bprintf b "CREATE UNIQUE (%s)<-[:%s]-(%s)" 
+                        (escapeIdent ln) (escapeIdent relType) (escapeIdent rn)                        
                 | Left(leftName=ln; rightName=rn) ->
-                    if props.Length = 0 then
-                        bprintf b "CREATE UNIQUE (%s)<-[:%s]-(%s)" 
-                            (escapeIdent ln) (escapeIdent relType) (escapeIdent rn)                        
-                    else
-                        bprintf b "CREATE UNIQUE (%s)<-[:%s {%s}]-(%s)" 
-                            (escapeIdent ln) (escapeIdent relType) paramName (escapeIdent rn)
+                    bprintf b "CREATE UNIQUE (%s)<-[:%s {%s}]-(%s)" 
+                        (escapeIdent ln) (escapeIdent relType) paramName (escapeIdent rn)
+                | Right(leftName=ln; rightName=rn) when props.Length = 0 ->
+                    bprintf b "CREATE UNIQUE (%s)-[:%s]->(%s)" 
+                        (escapeIdent ln) (escapeIdent relType) (escapeIdent rn)                        
                 | Right(leftName=ln; rightName=rn) ->
-                    if props.Length = 0 then
-                        bprintf b "CREATE UNIQUE (%s)-[:%s]->(%s)" 
-                            (escapeIdent ln) (escapeIdent relType) (escapeIdent rn)                        
-                    else
-                        bprintf b "CREATE UNIQUE (%s)-[:%s {%s}]->(%s)" 
-                            (escapeIdent ln) (escapeIdent relType) paramName (escapeIdent rn)), p)
-
-        [<CustomOperation("createUnique", MaintainsVariableSpace=true)>]
-        member __.CreateUnique(Cy(f, p), cypherStatement) =
-            Cy((f +> fun b ->
-                newLine b
-                bprintf b "CREATE UNIQUE %s" cypherStatement), p)
+                    bprintf b "CREATE UNIQUE (%s)-[:%s {%s}]->(%s)" 
+                        (escapeIdent ln) (escapeIdent relType) paramName (escapeIdent rn)), p)
 
         // TODO: WHERE and RETURN, for starters. Also "createMany" because we can't support loops and custom operations at the same time.
         // http://docs.neo4j.org/chunked/milestone/cypher-query-lang.html
