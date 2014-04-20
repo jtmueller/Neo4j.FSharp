@@ -56,10 +56,12 @@
     <None Include="Templates\NodeLabels.json" />
     <None Include="Templates\RelationshipTypes.json" />
     <None Include="Templates\Root.json" />
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="DynamicOperators.fs" />
     <Compile Include="EvaluationException.fs" />
     <Compile Include="Evaluation.fs" />
     <Compile Include="PropertyExtractor.fs" />
+    <Compile Include="CypherUtils.fs" />
     <Compile Include="CypherBuilder.fs" />
     <Compile Include="GraphDatabase.fs" />
     <None Include="GetTemplates.fsx" />
