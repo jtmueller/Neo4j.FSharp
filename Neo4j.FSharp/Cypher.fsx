@@ -24,9 +24,10 @@ let cypherQuery, parameters =
         // create nodes
         createEmpty "n1" "Foo"
         raw "CREATE (ron:Person { Name: 'Ron', Age: 17, Sex: 'M' })"
-        createType "harry" "Person" [ "Name", box "Harry"
-                                      "Age", box 17
-                                      "Sex", box "M" ]
+        createType "harry" "Person" 
+            [ "Name", box "Harry"
+              "Age", box 17
+              "Sex", box "M" ]
         create "arthur" { Name = "Arthur"
                           Age = 42
                           Sex = 'M' }

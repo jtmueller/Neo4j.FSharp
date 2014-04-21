@@ -69,7 +69,7 @@ module WhereParser =
             sb.Append op |> ignore
             traverse sb props re
 
-        | Call(Some e, mi, a :: _) when mi.Name = "StartsWith"  && mi.DeclaringType.Name = "String" ->
+        | Call(Some e, mi, a :: _) when mi.Name = "StartsWith" && mi.DeclaringType.Name = "String" ->
             // left(x, length("foo")) = "foo"
             let arg =
                 let argb = StringBuilder()
@@ -79,7 +79,7 @@ module WhereParser =
             traverse sb props e
             bprintf sb ", LENGTH(%s)) = %s" arg arg 
 
-        | Call(Some e, mi, a :: _) when mi.Name = "EndsWith"  && mi.DeclaringType.Name = "String" ->
+        | Call(Some e, mi, a :: _) when mi.Name = "EndsWith" && mi.DeclaringType.Name = "String" ->
             // right(x, length("foo")) = "foo"
             let arg =
                 let argb = StringBuilder()
@@ -89,7 +89,7 @@ module WhereParser =
             traverse sb props e
             bprintf sb ", LENGTH(%s)) = %s" arg arg 
         
-        | Call(Some e, mi, start :: tail) when mi.Name = "Substring"  && mi.DeclaringType.Name = "String" ->  
+        | Call(Some e, mi, start :: tail) when mi.Name = "Substring" && mi.DeclaringType.Name = "String" ->  
             bprintf sb "SUBSTRING("
             traverse sb props e
             bprintf sb ", "
@@ -120,27 +120,27 @@ module WhereParser =
             traverse sb props arg
             bprintf sb ")"
 
-        | Call(Some e, mi, []) when mi.Name = "Trim"  && mi.DeclaringType.Name = "String" ->
+        | Call(Some e, mi, []) when mi.Name = "Trim" && mi.DeclaringType.Name = "String" ->
             bprintf sb "TRIM("
             traverse sb props e
             bprintf sb ")"
 
-        | Call(Some e, mi, _) when mi.Name = "TrimEnd"  && mi.DeclaringType.Name = "String" ->
+        | Call(Some e, mi, _) when mi.Name = "TrimEnd" && mi.DeclaringType.Name = "String" ->
             bprintf sb "RTRIM("
             traverse sb props e
             bprintf sb ")"
 
-        | Call(Some e, mi, _) when mi.Name = "TrimStart"  && mi.DeclaringType.Name = "String" ->
+        | Call(Some e, mi, _) when mi.Name = "TrimStart" && mi.DeclaringType.Name = "String" ->
             bprintf sb "LTRIM("
             traverse sb props e
             bprintf sb ")"
 
-        | Call(Some e, mi, _) when mi.Name = "ToUpper"  && mi.DeclaringType.Name = "String" ->
+        | Call(Some e, mi, _) when mi.Name = "ToUpper" && mi.DeclaringType.Name = "String" ->
             bprintf sb "UPPER("
             traverse sb props e
             bprintf sb ")"
 
-        | Call(Some e, mi, _) when mi.Name = "ToLower"  && mi.DeclaringType.Name = "String" ->
+        | Call(Some e, mi, _) when mi.Name = "ToLower" && mi.DeclaringType.Name = "String" ->
             bprintf sb "LOWER("
             traverse sb props e
             bprintf sb ")"
@@ -184,7 +184,6 @@ module WhereParser =
 
         | SpecificCall <@ atan2 @> (None, _, arg1 :: arg2 :: [])
         | SpecificCall <@ Math.Atan2 @> (None, _, arg1 :: arg2 :: []) ->
-            printfn "%A" expr
             bprintf sb "ATAN2("
             traverse sb props arg1
             bprintf sb ", "
