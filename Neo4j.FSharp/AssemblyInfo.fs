@@ -5,7 +5,7 @@ open System.Resources;
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 
-[<assembly: AssemblyTitle("Neo4j Client fo F#")>]
+[<assembly: AssemblyTitle("Neo4j Client for F#")>]
 [<assembly: AssemblyDescription("F# Binding for the Neo4j Graph Database")>]
 [<assembly: AssemblyConfiguration("")>]
 [<assembly: AssemblyCompany("Joel Mueller")>]

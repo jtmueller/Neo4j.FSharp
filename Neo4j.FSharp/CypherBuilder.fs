@@ -1,30 +1,11 @@
 ﻿namespace Neo4j.FSharp
 
 open System
-open System.Collections.Generic
 open System.Text
-open System.Threading
-open Printf
-
 
 module Cypher =
+    open Printf
     open CypherUtils
-
-    [<NoEquality; NoComparison; Sealed>]
-    type PropertyBag() =
-        let mutable idx = 0
-        member val Params = new Dictionary<string, obj>() :> IDictionary<_,_> with get
-        member x.NextId =
-            let index = Interlocked.Increment(&idx)
-            "p" + (string index)
-        member private x.CurIndex = idx
-        member internal x.Merge(other:PropertyBag) =
-            if other.CurIndex > idx then
-                let mutable initial = idx
-                while initial <> Interlocked.CompareExchange(&idx, other.CurIndex, initial) do
-                    initial <- idx
-            for kvp in other.Params do
-                x.Params.[kvp.Key] <- kvp.Value
                 
     [<NoEquality; NoComparison>]
     type CypherExpr =
@@ -70,6 +51,11 @@ module Cypher =
     /// "name1" <-|relationType|- "name2"
     let inline (|-) (LP(leftName, relationship)) rightName = 
         R(Left(leftName, rightName), relationship)
+
+    /// This operator is a placeholder for the Cypher regex-match operator, to be used
+    /// in quotation expressions in the cypher builder.
+    let (=~) (value:string) (regex:string) =
+        RegularExpressions.Regex.IsMatch(value, regex)
 
     [<NoEquality; NoComparison; Sealed>]
     type CypherBuilderM internal () =
@@ -124,15 +110,17 @@ module Cypher =
         member __.CreateMany(Cy(f, p), entities:seq<'a>) =
             let entityVals = entities |> Seq.map PropertyExtractor.getProperties
             Cy((f +> fun b ->
+                let mutable i = 0
                 for nodeType, props in entityVals do
                     newLine b
-                    let paramName = p.NextId
                     if props.Length = 0 then
-                        bprintf b "CREATE (:%s)" (escapeIdent nodeType)
+                        bprintf b "CREATE (_%i:%s)" i (escapeIdent nodeType)
                     else
+                        let paramName = p.NextId
                         p.Params.[paramName] <- props
-                        bprintf b "CREATE (:%s {%s})" 
-                            (escapeIdent nodeType) paramName), p)
+                        bprintf b "CREATE (_%i:%s {%s})" i (escapeIdent nodeType) paramName
+                    i <- i + 1
+            ), p)
 
         [<CustomOperation("createUnique", MaintainsVariableSpace=true)>]
         member __.CreateUnique(Cy(f, p), cypherStatement) =
@@ -238,9 +226,7 @@ module Cypher =
         [<CustomOperation("where", MaintainsVariableSpace=true)>]
         member __.Where(Cy(f, p), expr: Quotations.Expr<'a -> bool>) = 
             Cy((f +> fun b ->
-                newLine b
-                bprintf b "WHERE %s" "TODO: Translate the quotation."), p)
-
+                WhereParser.transcribe b p expr), p)
 
         // TODO: http://docs.neo4j.org/chunked/milestone/cypher-query-lang.html
 

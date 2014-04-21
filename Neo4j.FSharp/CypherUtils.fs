@@ -3,7 +3,25 @@
 open System
 open System.Text
 open System.Text.RegularExpressions
+open System.Collections.Generic
+open System.Threading
 open Printf
+
+[<NoEquality; NoComparison; Sealed>]
+type PropertyBag() =
+    let mutable idx = 0
+    member val Params = new Dictionary<string, obj>() :> IDictionary<_,_> with get
+    member x.NextId =
+        let index = Interlocked.Increment(&idx)
+        "p" + (string index)
+    member private x.CurIndex = idx
+    member internal x.Merge(other:PropertyBag) =
+        if other.CurIndex > idx then
+            let mutable initial = idx
+            while initial <> Interlocked.CompareExchange(&idx, other.CurIndex, initial) do
+                initial <- idx
+        for kvp in other.Params do
+            x.Params.[kvp.Key] <- kvp.Value
 
 module internal CypherUtils =
     let (+>) f g x = 
