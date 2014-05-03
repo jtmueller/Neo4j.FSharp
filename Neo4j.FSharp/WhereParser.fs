@@ -12,8 +12,10 @@ module WhereParser =
     open Printf
     open CypherUtils
 
-    let private getOperator opName =
-        match opName with
+    let containsNoCase (target: string) (content: string) =
+        content.IndexOf(target, StringComparison.InvariantCultureIgnoreCase) > -1
+
+    let private getOperator = function
         // Comparison operators - TODO: IS NULL, IS NOT NULL
         | "op_Equality" -> " = "
         | "op_Inequality" -> " <> "
@@ -29,7 +31,6 @@ module WhereParser =
         | "op_Division" -> " / "
         | "op_Modulus" -> " % "
         | "op_Exponentiation" -> " ^ "
-        // TODO: Boolean operators come through as IfThenElse calls, plus "Not" method call
         | name ->
             failwithf "Unknown operator: %s." name
         
@@ -61,6 +62,24 @@ module WhereParser =
             bprintf sb "NOT ("
             traverse sb props arg
             bprintf sb ")"
+
+        | Call(None, mi, le :: Value(null, _) :: _) when mi.Name.StartsWith "op_" && containsNoCase "equality" mi.Name ->
+            traverse sb props le
+            let statement =
+                match mi.Name with
+                | "op_Equality" -> " IS NULL"
+                | "op_Inequality" -> " IS NOT NULL"
+                | op -> failwithf "Unknown null-comparison operator: %s." op
+            sb.Append statement |> ignore
+
+        | Call(None, mi, Value(null, _) :: re :: _) when mi.Name.StartsWith "op_" && containsNoCase "equality" mi.Name ->
+            traverse sb props re
+            let statement =
+                match mi.Name with
+                | "op_Equality" -> " IS NULL"
+                | "op_Inequality" -> " IS NOT NULL"
+                | op -> failwithf "Unknown null-comparison operator: %s." op
+            sb.Append statement |> ignore
 
         | Call(None, mi, le :: re :: _) when mi.Name.StartsWith "op_" ->
             // operators

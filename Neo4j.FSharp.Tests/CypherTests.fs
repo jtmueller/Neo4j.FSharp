@@ -146,7 +146,7 @@ module CypherTests =
 
     [<Fact>]
     let ``Cypher: Can create a set of entities`` () =
-        let expected = "CREATE (:Person {p1})\r\nCREATE (:Person {p2})\r\nCREATE (:Person {p3})"
+        let expected = "CREATE (_0:Person {p1})\r\nCREATE (_1:Person {p2})\r\nCREATE (_2:Person {p3})"
         let people = [
             { Name="Fred"; Age=21; Sex='M' }
             { Name="George"; Age=21; Sex='M' }
@@ -165,3 +165,34 @@ module CypherTests =
         test <@ ps.["p2"] :?> (string * obj)[] = expParams2 @>
         test <@ ps.["p3"] :?> (string * obj)[] = expParams3 @>
 
+    [<Fact>]
+    let ``Cypher: Can compare to null`` () =
+        let output, _ =
+            cypher {
+                where <@ fun (p:Person) -> p.Name = null @>
+            } |> CypherBuilder.build
+        test <@ output = "WHERE p.Name IS NULL" @>
+
+        let output, _ =
+            cypher {
+                where <@ fun (p:Person) -> null = p.Name @>
+            } |> CypherBuilder.build
+        test <@ output = "WHERE p.Name IS NULL" @>
+
+        let output, _ =
+            cypher {
+                where <@ fun (p:Person) -> p.Name = null && p.Age > 5 @>
+            } |> CypherBuilder.build
+        test <@ output = "WHERE (p.Name IS NULL AND p.Age > {p1})" @>
+
+        let output, _ =
+            cypher {
+                where <@ fun (p:Person) -> p.Name <> null @>
+            } |> CypherBuilder.build
+        test <@ output = "WHERE p.Name IS NOT NULL" @>
+
+        let output, _ =
+            cypher {
+                where <@ fun (p:Person) -> null <> p.Name @>
+            } |> CypherBuilder.build
+        test <@ output = "WHERE p.Name IS NOT NULL" @>
