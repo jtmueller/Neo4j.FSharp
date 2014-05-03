@@ -209,3 +209,30 @@ module CypherTests =
         test <@ ps.["p2"] = box 17 @>
         test <@ ps.["p3"] = box "Al" @>
         test <@ ps.["p4"] = box 2.5 @>
+
+    [<Fact>]
+    let ``Cypher: Can return a simple property`` () =
+        let expected = "RETURN p.Name"
+        let output, ps =
+            cypher {
+                returnWith <@ fun (p:Person) -> p.Name @>
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+
+    [<Fact>]
+    let ``Cypher: Can return a tuple`` () =
+        let expected = "RETURN p.Name, p.Age"
+        let output, ps =
+            cypher {
+                returnWith <@ fun (p:Person) -> p.Name, p.Age @>
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+
+    [<Fact>]
+    let ``Cypher: Can return with custom name`` () =
+        let expected = "RETURN p.Name AS TheName, p.Age AS HowOld"
+        let output, ps =
+            cypher {
+                returnWith <@ fun (p:Person) -> p.Name |> As "TheName", p.Age |> As "HowOld" @>
+            } |> CypherBuilder.build
+        test <@ output = expected @>

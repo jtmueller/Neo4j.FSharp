@@ -5,18 +5,18 @@ open System.Text
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 
-module WhereParser =
+module ReturnParser =
     open Printf
     open CypherUtils
     open ExpressionParser
     
-    let transcribe sb props (expr:Expr<'a -> bool>) =
+    let transcribe sb props (expr:Expr<'a -> 'b>) =
         match expr.Raw with
         | Lambda(_, e) ->
             newLine sb
-            sb.Append "WHERE " |> ignore
+            sb.Append "RETURN " |> ignore
             traverse sb props e
                 
         | _ ->
-            failwith "WHERE quotations should consist of a lambda expression that accepts the entity and returns a boolean."
+            failwith "RETURN quotations should consist of a lambda expression that accepts the entities and returns the desired output."
 

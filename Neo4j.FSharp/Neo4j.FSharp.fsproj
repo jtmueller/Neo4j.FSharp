@@ -62,19 +62,21 @@
     <Compile Include="Evaluation.fs" />
     <Compile Include="PropertyExtractor.fs" />
     <Compile Include="CypherUtils.fs" />
+    <Compile Include="ExpressionParser.fs" />
     <Compile Include="WhereParser.fs" />
+    <Compile Include="ReturnParser.fs" />
     <Compile Include="CypherBuilder.fs" />
     <Compile Include="GraphDatabase.fs" />
     <None Include="GetTemplates.fsx" />
     <None Include="Cypher.fsx" />
     <None Include="Quotations.fsx" />
     <None Include="PropertyTiming.fsx" />
-    <None Include="packages.config" />
     <None Include="app.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Data">
-      <HintPath>..\packages\FSharp.Data.2.0.5\lib\net40\FSharp.Data.dll</HintPath>
+      <HintPath>..\packages\FSharp.Data.2.0.7\lib\net40\FSharp.Data.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />

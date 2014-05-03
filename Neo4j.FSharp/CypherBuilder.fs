@@ -57,6 +57,9 @@ module Cypher =
     let (=~) (value:string) (regex:string) =
         RegularExpressions.Regex.IsMatch(value, regex)
 
+    /// Used in a returnWith statement, gives a value a new name.
+    let As (label:string) (value:'a) = value
+
     [<NoEquality; NoComparison; Sealed>]
     type CypherBuilderM internal () =
             
@@ -227,6 +230,12 @@ module Cypher =
         member __.Where(Cy(f, p), expr: Quotations.Expr<'a -> bool>) = 
             Cy((f +> fun b ->
                 WhereParser.transcribe b p expr), p)
+
+        /// Inserts a RETURN statement into the query, based on the given predicate.
+        [<CustomOperation("returnWith", MaintainsVariableSpace=true)>]
+        member __.ReturnWith(Cy(f, p), expr: Quotations.Expr<'a -> 'b>) =
+            Cy((f +> fun b ->
+                ReturnParser.transcribe b p expr), p)
 
         // TODO: http://docs.neo4j.org/chunked/milestone/cypher-query-lang.html
 
