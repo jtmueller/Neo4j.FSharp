@@ -45,30 +45,27 @@ module ExpressionParser =
             sb.Append(v.Name) |> ignore
 
         | AndAlso (le, re) ->
-            sb.Append '(' |> ignore
+            bprintf sb "("
             traverse sb props le
-            sb.Append " AND " |> ignore
+            bprintf sb " AND "
             traverse sb props re
-            sb.Append ')' |> ignore
+            bprintf sb ")"
 
         | OrElse (le, re) ->
-            sb.Append '(' |> ignore
+            bprintf sb "("
             traverse sb props le
-            sb.Append " OR " |> ignore
+            bprintf sb " OR "
             traverse sb props re
-            sb.Append ')' |> ignore
+            bprintf sb ")"
 
         | SpecificCall <@ (not) @> (None, _, arg :: []) ->
             bprintf sb "NOT ("
             traverse sb props arg
             bprintf sb ")"
 
-        | Call(None, mi, arg :: (Let(_, Value(name, nameType), Lambda(_, Call(None, mi2, _)))) :: []) when mi.Name = "op_PipeRight" && mi2.Name = "As" && nameType = typeof<string> ->
+        | Call(None, mi, arg :: (Let(_, Value(name, nameType), Lambda(_, Call(None, mi2, _)))) :: []) 
+            when mi.Name = "op_PipeRight" && mi2.Name = "As" && nameType = typeof<string> ->
             // AS for RETURN: p.Age |> As "foo"
-            //Call (None, op_PipeRight,
-            //      [PropertyGet (Some (p), Age, []),
-            //       Let (label, Value ("foo"),
-            //            Lambda (value, Call (None, As, [label, value])))])
             traverse sb props arg
             bprintf sb " AS %O" (escapeIdent (string name))
 
