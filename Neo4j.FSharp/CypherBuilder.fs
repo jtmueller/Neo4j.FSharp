@@ -60,6 +60,9 @@ module Cypher =
     /// Used in a returnWith statement, gives a value a new name.
     let As (label:string) (value:'a) = value
 
+    /// Used in a returnWith statement, returns the count of a collection
+    let Count (value:'a) = 0
+
     [<NoEquality; NoComparison; Sealed>]
     type CypherBuilderM internal () =
             

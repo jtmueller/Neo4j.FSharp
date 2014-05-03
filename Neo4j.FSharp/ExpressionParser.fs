@@ -34,7 +34,6 @@ module ExpressionParser =
             failwithf "Unknown operator: %s." name
         
     let rec traverse (sb:StringBuilder) (props:PropertyBag) expr =
-        // TODO: support for tuple creation, for RETURN statements
         match expr with
         | Value (v,t) ->
             let propName = props.NextId
@@ -301,6 +300,11 @@ module ExpressionParser =
 
         | Call(Some _, mi, _) when mi.Name = "NextDouble" && mi.DeclaringType.Name = "Random" ->
             bprintf sb "RAND()"
+
+        | Call(None, mi, arg :: []) when mi.Name = "Count" ->
+            bprintf sb "COUNT("
+            traverse sb props arg
+            bprintf sb ")"
 
         | _ ->
             failwithf "Unsupported expression: %A" expr

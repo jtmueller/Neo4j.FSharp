@@ -213,7 +213,7 @@ module CypherTests =
     [<Fact>]
     let ``Cypher: Can return a simple property`` () =
         let expected = "RETURN p.Name"
-        let output, ps =
+        let output, _ =
             cypher {
                 returnWith <@ fun (p:Person) -> p.Name @>
             } |> CypherBuilder.build
@@ -222,7 +222,7 @@ module CypherTests =
     [<Fact>]
     let ``Cypher: Can return a tuple`` () =
         let expected = "RETURN p.Name, p.Age"
-        let output, ps =
+        let output, _ =
             cypher {
                 returnWith <@ fun (p:Person) -> p.Name, p.Age @>
             } |> CypherBuilder.build
@@ -231,8 +231,17 @@ module CypherTests =
     [<Fact>]
     let ``Cypher: Can return with custom name`` () =
         let expected = "RETURN p.Name AS TheName, p.Age AS HowOld"
-        let output, ps =
+        let output, _ =
             cypher {
                 returnWith <@ fun (p:Person) -> p.Name |> As "TheName", p.Age |> As "HowOld" @>
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+
+    [<Fact>]
+    let ``Cypher: Can return a count`` () =
+        let expected = "RETURN COUNT(user) AS NumUsers"
+        let output, _ =
+            cypher {
+                returnWith <@ fun (user:Person) -> Count user |> As "NumUsers" @>
             } |> CypherBuilder.build
         test <@ output = expected @>
