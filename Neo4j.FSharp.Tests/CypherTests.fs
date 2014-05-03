@@ -196,3 +196,16 @@ module CypherTests =
                 where <@ fun (p:Person) -> null <> p.Name @>
             } |> CypherBuilder.build
         test <@ output = "WHERE p.Name IS NOT NULL" @>
+
+    [<Fact>]
+    let ``Cypher: Where with compound expression`` () =
+        let expected = "WHERE (((p.Name =~ {p1} AND p.Age > {p2}) OR LEFT(p.Name, LENGTH({p3})) = {p3}) OR SQRT(TOFLOAT(p.Age)) < {p4})"
+        let output, ps =
+            cypher {
+                where <@ fun (p:Person) -> (p.Name =~ "(Br|Ch)ad" && p.Age > 17) || p.Name.StartsWith "Al" || sqrt (float p.Age) < 2.5  @>
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+        test <@ ps.["p1"] = box "(Br|Ch)ad" @>
+        test <@ ps.["p2"] = box 17 @>
+        test <@ ps.["p3"] = box "Al" @>
+        test <@ ps.["p4"] = box 2.5 @>

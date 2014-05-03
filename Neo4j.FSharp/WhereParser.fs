@@ -12,11 +12,10 @@ module WhereParser =
     open Printf
     open CypherUtils
 
-    let containsNoCase (target: string) (content: string) =
+    let private containsNoCase (target: string) (content: string) =
         content.IndexOf(target, StringComparison.InvariantCultureIgnoreCase) > -1
 
     let private getOperator = function
-        // Comparison operators - TODO: IS NULL, IS NOT NULL
         | "op_Equality" -> " = "
         | "op_Inequality" -> " <> "
         | "op_LessThan" -> " < "
@@ -131,6 +130,16 @@ module WhereParser =
 
         | SpecificCall <@ string @> (None, _, arg :: []) ->
             bprintf sb "STR("
+            traverse sb props arg
+            bprintf sb ")"
+
+        | SpecificCall <@ float @> (None, _, arg :: []) ->
+            bprintf sb "TOFLOAT("
+            traverse sb props arg
+            bprintf sb ")"
+
+        | SpecificCall <@ int @> (None, _, arg :: []) ->
+            bprintf sb "TOINT("
             traverse sb props arg
             bprintf sb ")"
 
