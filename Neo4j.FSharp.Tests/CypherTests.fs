@@ -242,6 +242,15 @@ module CypherTests =
         let expected = "RETURN COUNT(user) AS NumUsers"
         let output, _ =
             cypher {
-                returnWith <@ fun (user:Person) -> Count user |> As "NumUsers" @>
+                returnWith <@ fun (user:Person) -> Count(user) |> As "NumUsers" @>
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+
+    [<Fact>]
+    let ``Cypher: Can return labels`` () =
+        let expected = "RETURN user, LABELS(user)"
+        let output, _ =
+            cypher {
+                returnWith <@ fun (user:Person) -> user, Labels(user) @>
             } |> CypherBuilder.build
         test <@ output = expected @>

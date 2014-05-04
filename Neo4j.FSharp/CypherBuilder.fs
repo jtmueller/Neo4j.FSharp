@@ -61,7 +61,10 @@ module Cypher =
     let As (label:string) (value:'a) = value
 
     /// Used in a returnWith statement, returns the count of a collection
-    let Count (value:'a) = 0
+    let Count (node:'a) = 0
+
+    /// Used in a returnWith statement, returns the list of labels attached to a node.
+    let Labels (node:'a) = Seq.empty<string>
 
     [<NoEquality; NoComparison; Sealed>]
     type CypherBuilderM internal () =

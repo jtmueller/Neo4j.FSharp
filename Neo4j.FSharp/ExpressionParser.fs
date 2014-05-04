@@ -306,5 +306,10 @@ module ExpressionParser =
             traverse sb props arg
             bprintf sb ")"
 
+        | Call(None, mi, arg :: []) when mi.Name = "Labels" ->
+            bprintf sb "LABELS("
+            traverse sb props arg
+            bprintf sb ")"
+
         | _ ->
             failwithf "Unsupported expression: %A" expr
