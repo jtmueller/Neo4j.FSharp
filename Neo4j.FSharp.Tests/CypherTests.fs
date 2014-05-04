@@ -254,3 +254,12 @@ module CypherTests =
                 returnWith <@ fun (user:Person) -> user, Labels(user) @>
             } |> CypherBuilder.build
         test <@ output = expected @>
+
+    [<Fact>]
+    let ``Cypher: Can use Collect`` () =
+        let expected = "RETURN COLLECT(user.Age) AS Ages"
+        let output, _ =
+            cypher {
+                returnWith <@ fun (user:Person) -> Collect(user.Age) |> As "Ages" @>
+            } |> CypherBuilder.build
+        test <@ output = expected @>

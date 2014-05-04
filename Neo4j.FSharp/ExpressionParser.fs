@@ -311,5 +311,10 @@ module ExpressionParser =
             traverse sb props arg
             bprintf sb ")"
 
+        | Call(None, mi, arg :: []) when mi.Name = "Collect" ->
+            bprintf sb "COLLECT("
+            traverse sb props arg
+            bprintf sb ")"
+
         | _ ->
             failwithf "Unsupported expression: %A" expr

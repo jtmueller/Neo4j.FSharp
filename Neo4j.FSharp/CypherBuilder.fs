@@ -63,8 +63,13 @@ module Cypher =
     /// Used in a returnWith statement, returns the count of a collection
     let Count (node:'a) = 0
 
+    // TODO: support COUNT(DISTINCT foo.Bar) and COUNT(*)
+
     /// Used in a returnWith statement, returns the list of labels attached to a node.
     let Labels (node:'a) = Seq.empty<string>
+
+    /// Used in a returnWith statement, collects all instances of the given property/expression into a list.
+    let Collect (value:'a) = Seq.empty<'a>
 
     [<NoEquality; NoComparison; Sealed>]
     type CypherBuilderM internal () =
