@@ -273,8 +273,8 @@ module CypherTests =
         test <@ output = expected @>
                     
     [<Fact>]
-    let ``Cypher: Can use COLLECT with Seq.map`` () =
-        let expected = "RETURN COLLECT(user.Age) AS Ages"
+    let ``Cypher: Can translate Seq.map to a list comprehension`` () =
+        let expected = "RETURN [user IN users | user.Age] AS Ages"
         let output, _ =
             cypher {
                 //matchWith/where omitted
@@ -283,7 +283,7 @@ module CypherTests =
         test <@ output = expected @>
 
     [<Fact>]
-    let ``Cypher: Can use FILTER with pipe-right operator`` () =
+    let ``Cypher: Can translate Seq.filter to a list comprehension with pipe-right operator`` () =
         let expected = "RETURN [user IN users WHERE user.Age > {p1}]"
         let output, ps =
             cypher {
@@ -294,7 +294,7 @@ module CypherTests =
         test <@ ps.["p1"] = box 21 @>
 
     [<Fact>]
-    let ``Cypher: Can use FILTER with label`` () =
+    let ``Cypher: Can translate Seq.filter to a list comprehension`` () =
         let expected = "RETURN [user IN users WHERE user.Age > {p1}] AS drinkers"
         let output, ps =
             cypher {

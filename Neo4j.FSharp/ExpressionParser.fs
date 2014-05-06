@@ -332,10 +332,14 @@ module ExpressionParser =
             traverse sb props arg
             bprintf sb ")"
 
-        | SpecificCall <@ Seq.map @> (None, _, Lambda(var, ex) :: _ :: []) ->
-            bprintf sb "COLLECT("
+        | SpecificCall <@ Seq.map @> (None, _, Lambda(var, ex) :: source :: []) ->
+            // [user IN users | user.Age]
+            bprintf sb "[%s" (escapeIdent var.Name)
+            bprintf sb " IN "
+            traverse sb props source
+            bprintf sb " | "
             traverse sb props ex
-            bprintf sb ")"
+            bprintf sb "]"
 
         | SpecificCall <@ Seq.filter @> (None, _, Lambda(var, predicate) :: source :: []) ->
             // [user IN users WHERE predicate]
