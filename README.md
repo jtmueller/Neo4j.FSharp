@@ -51,6 +51,7 @@ let cypherQuery, parameters =
         // query and filter
         matchWith "(p:Person)"
         where <@ fun (p:Person) -> p.Name =~ "(Br|Ch)ad" && p.Age > 17 @>
+        returnWith <@ fun (p:Person) -> Collect(p.Age) |> Seq.filter (fun x -> x > 21) |> As "drinkers" @>
     }
     |> CypherBuilder.build
 
@@ -71,8 +72,10 @@ for kvp in parameters do
     CREATE (petunias:Monster {p4})
     CREATE (harry)<-[:Friend {p5}]-(ron)
     CREATE (arthur)-[:Has]->(towel)
+
     MATCH (p:Person)
     WHERE (p.Name =~ {p7} AND p.Age > {p8})
+    RETURN [x IN COLLECT(p.Age) WHERE x > {p9}] AS drinkers
 
     Parameter Values:
     p1 = [|("Name", "Harry"); ("Age", 17); ("Sex", "M")|]
@@ -82,3 +85,4 @@ for kvp in parameters do
     p5 = [|("Since", 1997)|]
     p7 = "(Br|Ch)ad"
     p8 = 17
+    p9 = 21

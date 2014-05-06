@@ -43,7 +43,7 @@ let cypherQuery, parameters =
         // query and filter
         matchWith "(p:Person)"
         where <@ fun (p:Person) -> p.Name =~ "(Br|Ch)ad" && p.Age > 17 @>
-        returnWith <@ fun (p:Person) -> p.Name @>
+        returnWith <@ fun (p:Person) -> Collect(p.Age) |> Seq.filter (fun x -> x > 21) |> As "drinkers" @>
     }
     |> CypherBuilder.build
 

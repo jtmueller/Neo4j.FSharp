@@ -15,6 +15,8 @@ module ExpressionParser =
     let private containsNoCase (target: string) (content: string) =
         content.IndexOf(target, StringComparison.InvariantCultureIgnoreCase) > -1
 
+    // TODO: translate F# list comprehensions into Cypher list comprehensions
+
     let private getOperator = function
         | "op_Equality" -> " = "
         | "op_Inequality" -> " <> "
@@ -330,7 +332,12 @@ module ExpressionParser =
             traverse sb props arg
             bprintf sb ")"
 
-        | SpecificCall <@ Seq.filter @> (None, _, (Lambda(var, predicate)) :: source :: []) ->
+        | SpecificCall <@ Seq.map @> (None, _, Lambda(var, ex) :: _ :: []) ->
+            bprintf sb "COLLECT("
+            traverse sb props ex
+            bprintf sb ")"
+
+        | SpecificCall <@ Seq.filter @> (None, _, Lambda(var, predicate) :: source :: []) ->
             // [user IN users WHERE predicate]
             bprintf sb "[%s" (escapeIdent var.Name)
             bprintf sb " IN "
@@ -338,6 +345,7 @@ module ExpressionParser =
             bprintf sb " WHERE "
             traverse sb props predicate
             bprintf sb "]"
+
 
         | _ ->
             failwithf "Unsupported expression: %A" expr

@@ -263,12 +263,22 @@ module CypherTests =
         test <@ output = expected @>
 
     [<Fact>]
-    let ``Cypher: Can use Collect`` () =
+    let ``Cypher: Can use COLLECT with Collect function`` () =
         let expected = "RETURN COLLECT(user.Age) AS Ages"
         let output, _ =
             cypher {
                 //matchWith/where omitted
                 returnWith <@ fun (user:Person) -> Collect(user.Age) |> As "Ages" @>
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+                    
+    [<Fact>]
+    let ``Cypher: Can use COLLECT with Seq.map`` () =
+        let expected = "RETURN COLLECT(user.Age) AS Ages"
+        let output, _ =
+            cypher {
+                //matchWith/where omitted
+                returnWith <@ fun (users:seq<Person>) -> users |> Seq.map (fun user -> user.Age) |> As "Ages" @>
             } |> CypherBuilder.build
         test <@ output = expected @>
 
