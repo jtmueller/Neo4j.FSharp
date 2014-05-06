@@ -242,11 +242,18 @@ module Cypher =
             Cy((f +> fun b ->
                 WhereParser.transcribe b p expr), p)
 
-        /// Inserts a RETURN statement into the query, based on the given predicate.
+        /// Inserts a RETURN statement into the query, based on the given function.
         [<CustomOperation("returnWith", MaintainsVariableSpace=true)>]
         member __.ReturnWith(Cy(f, p), expr: Quotations.Expr<'a -> 'b>) =
             Cy((f +> fun b ->
                 ReturnParser.transcribe b p expr), p)
+
+        /// Inserts a DELETE statement into the query, based on the given item list.
+        [<CustomOperation("delete", MaintainsVariableSpace=true)>]
+        member __.Delete(Cy(f, p), items: string) =
+            Cy((f +> fun b ->
+                newLine b
+                bprintf b "DELETE %s" items), p)
 
         // TODO: http://docs.neo4j.org/chunked/milestone/cypher-query-lang.html
 

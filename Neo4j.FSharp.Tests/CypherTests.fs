@@ -169,6 +169,7 @@ module CypherTests =
     let ``Cypher: Can compare to null`` () =
         let output, _ =
             cypher {
+                // matchWith omitted
                 where <@ fun (p:Person) -> p.Name = null @>
             } |> CypherBuilder.build
         test <@ output = "WHERE p.Name IS NULL" @>
@@ -202,6 +203,7 @@ module CypherTests =
         let expected = "WHERE (((p.Name =~ {p1} AND p.Age > {p2}) OR LEFT(p.Name, LENGTH({p3})) = {p3}) OR SQRT(TOFLOAT(p.Age)) < {p4})"
         let output, ps =
             cypher {
+                // matchWith omitted
                 where <@ fun (p:Person) -> (p.Name =~ "(Br|Ch)ad" && p.Age > 17) || p.Name.StartsWith "Al" || sqrt (float p.Age) < 2.5  @>
             } |> CypherBuilder.build
         test <@ output = expected @>
@@ -215,6 +217,7 @@ module CypherTests =
         let expected = "RETURN p.Name"
         let output, _ =
             cypher {
+                //matchWith/where omitted
                 returnWith <@ fun (p:Person) -> p.Name @>
             } |> CypherBuilder.build
         test <@ output = expected @>
@@ -224,6 +227,7 @@ module CypherTests =
         let expected = "RETURN p.Name, p.Age"
         let output, _ =
             cypher {
+                //matchWith/where omitted
                 returnWith <@ fun (p:Person) -> p.Name, p.Age @>
             } |> CypherBuilder.build
         test <@ output = expected @>
@@ -233,6 +237,7 @@ module CypherTests =
         let expected = "RETURN p.Name AS TheName, p.Age AS HowOld"
         let output, _ =
             cypher {
+                //matchWith/where omitted
                 returnWith <@ fun (p:Person) -> p.Name |> As "TheName", p.Age |> As "HowOld" @>
             } |> CypherBuilder.build
         test <@ output = expected @>
@@ -242,6 +247,7 @@ module CypherTests =
         let expected = "RETURN COUNT(user) AS NumUsers"
         let output, _ =
             cypher {
+                //matchWith/where omitted
                 returnWith <@ fun (user:Person) -> Count(user) |> As "NumUsers" @>
             } |> CypherBuilder.build
         test <@ output = expected @>
@@ -251,6 +257,7 @@ module CypherTests =
         let expected = "RETURN user, LABELS(user)"
         let output, _ =
             cypher {
+                //matchWith/where omitted
                 returnWith <@ fun (user:Person) -> user, Labels(user) @>
             } |> CypherBuilder.build
         test <@ output = expected @>
@@ -260,6 +267,17 @@ module CypherTests =
         let expected = "RETURN COLLECT(user.Age) AS Ages"
         let output, _ =
             cypher {
+                //matchWith/where omitted
                 returnWith <@ fun (user:Person) -> Collect(user.Age) |> As "Ages" @>
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+
+    [<Fact>]
+    let ``Cypher: Can create DELETE statement`` () =
+        let expected = "DELETE u, r"
+        let output, _ =
+            cypher {
+                //matchWith/where omitted
+                delete "u, r"
             } |> CypherBuilder.build
         test <@ output = expected @>
