@@ -273,6 +273,28 @@ module CypherTests =
         test <@ output = expected @>
 
     [<Fact>]
+    let ``Cypher: Can use FILTER with pipe-right operator`` () =
+        let expected = "RETURN [user IN users WHERE user.Age > {p1}]"
+        let output, ps =
+            cypher {
+                //matchWith/where omitted
+                returnWith <@ fun (users:seq<Person>) -> users |> Seq.filter (fun user -> user.Age > 21) @>
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+        test <@ ps.["p1"] = box 21 @>
+
+    [<Fact>]
+    let ``Cypher: Can use FILTER with label`` () =
+        let expected = "RETURN [user IN users WHERE user.Age > {p1}] AS drinkers"
+        let output, ps =
+            cypher {
+                //matchWith/where omitted
+                returnWith <@ fun (users:seq<Person>) -> Seq.filter (fun user -> user.Age > 21) users |> As "drinkers" @>
+            } |> CypherBuilder.build
+        test <@ output = expected @>
+        test <@ ps.["p1"] = box 21 @>
+
+    [<Fact>]
     let ``Cypher: Can create DELETE statement`` () =
         let expected = "DELETE u, r"
         let output, _ =
@@ -281,3 +303,5 @@ module CypherTests =
                 delete "u, r"
             } |> CypherBuilder.build
         test <@ output = expected @>
+
+    

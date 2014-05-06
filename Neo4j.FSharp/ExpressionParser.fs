@@ -62,11 +62,25 @@ module ExpressionParser =
             traverse sb props arg
             bprintf sb ")"
 
-        | Call(None, mi, arg :: (Let(_, Value(name, nameType), Lambda(_, Call(None, mi2, _)))) :: []) 
+        | Call(None, mi, arg :: Let(_, Value(name, nameType), Lambda(_, Call(None, mi2, _))) :: []) 
             when mi.Name = "op_PipeRight" && mi2.Name = "As" && nameType = typeof<string> ->
             // AS for RETURN: p.Age |> As "foo"
             traverse sb props arg
             bprintf sb " AS %O" (escapeIdent (string name))
+
+        | Call(None, mi, value :: Let(var, varVal, body) :: []) when mi.Name = "op_PipeRight" ->
+            // replace the variable in the expression with the actual code
+            let transformed = 
+                body.Substitute (fun v -> if v = var then Some varVal else None)
+
+            match transformed with
+            | Lambda(innerVar, e) ->
+                // In <@ users |> Seq.filter (...) @> renames the "source" parameter
+                // of Seq.filter to "users" for later use.
+                e.Substitute(fun v -> if v = innerVar then Some value else None)
+                |> traverse sb props
+            | _ ->
+                traverse sb props transformed
 
         | Call(None, mi, le :: Value(null, _) :: _) when mi.Name.StartsWith "op_" && containsNoCase "equality" mi.Name ->
             traverse sb props le
@@ -315,6 +329,15 @@ module ExpressionParser =
             bprintf sb "COLLECT("
             traverse sb props arg
             bprintf sb ")"
+
+        | SpecificCall <@ Seq.filter @> (None, _, (Lambda(var, predicate)) :: source :: []) ->
+            // [user IN users WHERE predicate]
+            bprintf sb "[%s" (escapeIdent var.Name)
+            bprintf sb " IN "
+            traverse sb props source
+            bprintf sb " WHERE "
+            traverse sb props predicate
+            bprintf sb "]"
 
         | _ ->
             failwithf "Unsupported expression: %A" expr
